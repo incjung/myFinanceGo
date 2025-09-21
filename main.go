@@ -39,7 +39,6 @@ type Ticker struct {
   Name string
   Dates      []time.Time
   Indicators map[string][]float64
-  Measure IMeasure
 }
 
 func NewTicker(symbol string) *Ticker {
@@ -104,24 +103,29 @@ func (t *Ticker) Print() {
 
 type MyInterestMeasure struct {
   MyTicker *Ticker
+  MyInterestedHeader []string
   CurrentPrice float64
   LastHight map[string]float64  //last 10d, 30d, 6mo
   DropRate map[string]float64  //last 10d, 30d, 6mo
   Warning bool 
 }
 
-func NewMyInterestMeasure(t *Ticker) *MyInterestMeasure {
-  return &MyInterestMeasure{
+func (t *Ticker) DoCalcuate() *MyInterestMeasure {
+  myInterest := &MyInterestMeasure{
     MyTicker: t,
     CurrentPrice: 0,
     LastHight: make(map[string]float64),
     DropRate: make(map[string]float64),
   }
+  myInterest.CalMyMeasures()
+  return myInterest
 }
+
 
 func (mi *MyInterestMeasure) CalMyMeasures () {
   shigh := mi.MyTicker.Indicators["high"]
   mLen := len(shigh)
+  mi.MyInterestedHeader = []string{"NAME","Price","last05d","drop05d","last10d","drop10d","last30d","drop30d","last6mo","drop6mo","sell?"}
   mi.CurrentPrice = roundToDecimalPlaces(mi.MyTicker.Indicators["close"][mLen-1],2)
   mi.LastHight["last05d"] = roundToDecimalPlaces(slices.Max(shigh[mLen-5:]),2)
   mi.DropRate["last05d"] = roundToDecimalPlaces((mi.CurrentPrice -  mi.LastHight["last05d"]) / mi.LastHight["last05d"]*100,2)
@@ -137,8 +141,16 @@ func (mi *MyInterestMeasure) CalMyMeasures () {
   }   
 }
 
-func (mi *MyInterestMeasure) Print() {
-  fmt.Printf("|%6v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|\n","NAME","Price","last05d","drop05d","last10d","drop10d","last30d","drop30d","last6mo","drop6mo","sell?")
+func (mi *MyInterestMeasure) PrintHeader() {
+  fmt.Printf("|%6v|", mi.MyInterestedHeader[0])
+  for j :=1; j< len(mi.MyInterestedHeader); j++ {
+    fmt.Printf("%7v|",mi.MyInterestedHeader[j])
+  }
+  fmt.Println()
+}
+
+func (mi *MyInterestMeasure) PrintData() {
+  //fmt.Printf("|%6v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|\n","NAME","Price","last05d","drop05d","last10d","drop10d","last30d","drop30d","last6mo","drop6mo","sell?")
   fmt.Printf("|%6v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|\n",
     mi.MyTicker.Name,
     mi.CurrentPrice,
@@ -177,15 +189,29 @@ func main() {
 
   myInterestSymbol := []string{"FSF.NZ","FNZ.NZ", "CEN.NZ"}
 
+  var MyInterestMeasures []*MyInterestMeasure
+  
   for _, symbol := range myInterestSymbol {
     myTicker := NewTicker(symbol)
     myTicker.getChart()
     //myTicker.Print()
+    
+    //myMesure := myTicker.DoCalcuate()
+    //myMesure.Print()
+    
+    //myMesure := NewMyInterestMeasure(myTicker)
+    //myMesure.CalMyMeasures()
+    //myMesure.Print()
+    MyInterestMeasures = append(MyInterestMeasures, myTicker.DoCalcuate())
+  }
 
-    myMesure := NewMyInterestMeasure(myTicker)
-    myMesure.CalMyMeasures()
-    myMesure.Print()
+  
+  for i,t := range MyInterestMeasures {
+    if i==0 {
+      t.PrintHeader()
+    }
+    t.PrintData()
   }
   
+    
 }
-
