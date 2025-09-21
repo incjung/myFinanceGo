@@ -31,10 +31,15 @@ type Response struct {
   } `json:"chart"`
 }
 
+type IMeasure interface {
+  CalMyMeasures ()
+}
+
 type Ticker struct {
   Name string
   Dates      []time.Time
   Indicators map[string][]float64
+  Measure IMeasure
 }
 
 func NewTicker(symbol string) *Ticker {
@@ -133,16 +138,20 @@ func (mi *MyInterestMeasure) CalMyMeasures () {
 }
 
 func (mi *MyInterestMeasure) Print() {
-  fmt.Println("================================")
-  fmt.Printf("%v Is 10%% dropped? %-10v\n", mi.MyTicker.Name, mi.Warning)
-  fmt.Println("--------------------------------")
-  fmt.Printf("Yesterday close price   $ %5v\n",  mi.CurrentPrice)
-  fmt.Printf("High price in last  5d: $ %5v (Drop rate: %v %%) \n",  mi.LastHight["last05d"], mi.DropRate["last05d"])
-  fmt.Printf("High price in last 10d: $ %5v (Drop rate: %v %%) \n", mi.LastHight["last10d"], mi.DropRate["last10d"])
-  fmt.Printf("High price in last 30d: $ %5v (Drop rate: %v %%) \n", mi.LastHight["last30d"], mi.DropRate["last30d"])
-  fmt.Printf("High price in last 6mo: $ %5v (Drop rate: %v %%) \n", mi.LastHight["last6mo"], mi.DropRate["last6mo"])
-  fmt.Println()
-
+  fmt.Printf("|%6v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|\n","NAME","Price","last05d","drop05d","last10d","drop10d","last30d","drop30d","last6mo","drop6mo","sell?")
+  fmt.Printf("|%6v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|%7v|\n",
+    mi.MyTicker.Name,
+    mi.CurrentPrice,
+    mi.LastHight["last05d"],
+    mi.DropRate["last05d"],
+    mi.LastHight["last10d"],
+    mi.DropRate["last10d"],
+    mi.LastHight["last30d"],
+    mi.DropRate["last30d"],
+    mi.LastHight["last6mo"],
+    mi.DropRate["last6mo"],
+    mi.Warning,
+  )
 }
 
 
